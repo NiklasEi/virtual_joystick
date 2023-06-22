@@ -1,6 +1,7 @@
 use std::hash::Hash;
 
 use bevy::{input::touch::TouchPhase, prelude::*};
+use bevy::reflect::TypePath;
 
 use crate::{
     joystick::VirtualJoystickKnob, VirtualJoystickEvent, VirtualJoystickEventType,
@@ -18,7 +19,7 @@ fn is_some_and<T>(opt: Option<T>, cb: impl FnOnce(T) -> bool) -> bool {
     false
 }
 
-pub fn update_joystick<S: Hash + Sync + Send + Clone + Default + Reflect + 'static>(
+pub fn update_joystick<S: Hash + Sync + Send + Clone + Default + TypePath + Reflect + 'static>(
     mut touch_events: EventReader<TouchInput>,
     mut send_values: EventWriter<VirtualJoystickEvent<S>>,
     mut joysticks: Query<(&VirtualJoystickNode<S>, &mut VirtualJoystickKnob)>,
@@ -67,7 +68,7 @@ pub fn update_joystick<S: Hash + Sync + Send + Clone + Default + Reflect + 'stat
                     }
                 }
                 // End drag
-                TouchPhase::Ended | TouchPhase::Cancelled => {
+                TouchPhase::Ended | TouchPhase::Canceled => {
                     if is_some_and(knob.id_drag, |i| i == *id) {
                         knob.id_drag = None;
                         knob.base_pos = Vec2::ZERO;
@@ -100,13 +101,14 @@ pub fn update_joystick<S: Hash + Sync + Send + Clone + Default + Reflect + 'stat
     }
 }
 
-pub fn update_joystick_by_mouse<S: Hash + Sync + Send + Clone + Default + Reflect + 'static>(
+pub fn update_joystick_by_mouse<S: Hash + Sync + Send + Clone + Default + TypePath + Reflect + 'static>(
     mouse_button_input: Res<Input<MouseButton>>,
     mut cursor_evr: EventReader<CursorMoved>,
     mut send_values: EventWriter<VirtualJoystickEvent<S>>,
     mut joysticks: Query<(&VirtualJoystickNode<S>, &mut VirtualJoystickKnob)>,
     windows: Query<&Window>,
 ) {
+    println!("update_joystick_by_mouse");
     let window = windows.single();
     let mouse_positions = cursor_evr
         .iter()
@@ -118,6 +120,7 @@ pub fn update_joystick_by_mouse<S: Hash + Sync + Send + Clone + Default + Reflec
         if mouse_button_input.just_released(MouseButton::Left)
             && is_some_and(knob.id_drag, |i| i == 0)
         {
+            println!("End drag");
             knob.id_drag = None;
             knob.start_pos = Vec2::ZERO;
             knob.current_pos = Vec2::ZERO;
@@ -132,11 +135,13 @@ pub fn update_joystick_by_mouse<S: Hash + Sync + Send + Clone + Default + Reflec
         }
 
         for pos in &mouse_positions {
+            println!("{}, {}, {}", mouse_button_input.just_pressed(MouseButton::Left), knob.id_drag.is_none(), knob.interactable_zone_rect.contains(*pos));
             // Start drag
             if mouse_button_input.just_pressed(MouseButton::Left)
                 && knob.id_drag.is_none()
                 && knob.interactable_zone_rect.contains(*pos)
             {
+                println!("Start drag");
                 knob.id_drag = Some(0);
                 knob.start_pos = *pos;
                 send_values.send(VirtualJoystickEvent {
@@ -152,6 +157,7 @@ pub fn update_joystick_by_mouse<S: Hash + Sync + Send + Clone + Default + Reflec
             if mouse_button_input.pressed(MouseButton::Left)
                 && is_some_and(knob.id_drag, |i| i == 0)
             {
+                println!("Dragging");
                 if node.behaviour == VirtualJoystickType::Dynamic {
                     knob.base_pos = *pos;
                 }
@@ -169,6 +175,7 @@ pub fn update_joystick_by_mouse<S: Hash + Sync + Send + Clone + Default + Reflec
         if (knob.delta.x.abs() >= knob.dead_zone || knob.delta.y.abs() >= knob.dead_zone)
             && knob.id_drag.is_some()
         {
+            println!("Send event");
             send_values.send(VirtualJoystickEvent {
                 id: node.id.clone(),
                 event: VirtualJoystickEventType::Drag,

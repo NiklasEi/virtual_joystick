@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use virtual_joystick::*;
 
@@ -14,7 +13,6 @@ enum JoystickController {
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(WorldInspectorPlugin::new())
         .add_plugin(VirtualJoystickPlugin::<JoystickController>::default())
         .add_startup_system(create_scene)
         .add_system(update_joystick)

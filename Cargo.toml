@@ -14,10 +14,8 @@ rust-version = "1.67.0"
 
 [features]
 default = ["serialize"]
-inspect = ["bevy-inspector-egui"]
 serialize = ["serde"]
 
 [dependencies]
-bevy = { version = "0.10.1" }
-bevy-inspector-egui = { version = "0.18", optional = true }
+bevy = { git = "https://github.com/bevyengine/bevy" }
 serde = { version = "1.0.160", features = ["derive"], optional = true }

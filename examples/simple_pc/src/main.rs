@@ -1,15 +1,13 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use virtual_joystick::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(WorldInspectorPlugin::new())
-        .add_plugin(VirtualJoystickPlugin::<String>::default())
-        .add_startup_system(create_scene)
-        .add_system(update_joystick)
+        .add_plugins(VirtualJoystickPlugin::<String>::default())
+        .add_systems(Startup, create_scene)
+        .add_systems(Update, update_joystick)
         .run();
 }
 
@@ -49,13 +47,11 @@ fn create_scene(mut cmd: Commands, asset_server: Res<AssetServer>) {
         })
         .set_color(TintColor(Color::WHITE))
         .set_style(Style {
-            size: Size::all(Val::Px(150.)),
+            width: Val::Px(150.),
+            height: Val::Px(150.),
             position_type: PositionType::Absolute,
-            position: UiRect {
                 left: Val::Percent(50.),
                 bottom: Val::Percent(15.),
-                ..default()
-            },
             ..default()
         }),
     )
@@ -71,6 +67,7 @@ fn update_joystick(
     let (mut player, player_data) = player.single_mut();
 
     for j in joystick.iter() {
+        println!("{:?}", j.value());
         let Vec2 { x, y } = j.axis();
         player.translation.x += x * player_data.0 * time_step.period.as_secs_f32();
         player.translation.y += y * player_data.0 * time_step.period.as_secs_f32();
